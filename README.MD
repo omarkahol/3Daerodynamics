@@ -8,7 +8,7 @@
 Inside you can find:
 
 ## AeroFoil in openAirFoilCoordinates.py
-a class that downloads and reads the coordinates and the performances of an airfoil. Every file is downloaded from the University of Illinois Database
+a class that downloads and reads the coordinates and the performances of an airfoil. Every file is downloaded from the [University of Illinois Airfoil Database](http://airfoiltools.com/airfoil/). The parsed name should be the one indicated in their website.
 ```python
 import AeroFoil
 
@@ -20,9 +20,17 @@ clLambda = aer.fitCL(3) #FIT CL CURVE, DEGREE = 3
 ```
 ## vortexPanel
 a class that stores the main vertices of a panel. It also computes relevat points such as the control point and the application points of the horseshoe vortex, stores the vortex strength and computes the dihedral and dz/dx angles.
+The order is 
+
+P1----P2         |------Y direction
+|      |         |
+|      |         |
+P3----P4         X direction
+
+The control point is located at about 75% of the mean Y distance and the points that generate the vortex at about 25% of the distance. This choice can cause numerical errors since 25 is a divisor of 75 so one panel can easily have the control coordinate equal to the generation coordinate of the other. This is why I have chosen two slightly different numbers. 
 
 ## vortexLatticeSolver
-a class that implements the solver for the vortex lattice method. The input should be a panel array. 
+a class that implements a non viscous solver for the vortex lattice method. The input should be a panel array. The vortex generates an induced velocity that can be calculated using Biot-Savart's law. The unknown is the vortex strength and the boundary condition is that the normal component velocity at the control point of each panel is zero. This condition generates a linear system of equations that is solved with numpy's linear algebra tools.
 ```python
 import vortexLatticeSolver
 
@@ -35,13 +43,13 @@ solver.solveSystem() #SOLVE THE SYSTEM OF EQUATIONS AND COMPUTE RELEVANT TERMS
 The code solves the system of equations and sets each vortex strength to its panel. It also performs a chordwise sum to obatin the leading edge vortex strength used to calculate CL and CDi
 
 ## vortexLineTool in gammaTool.py
-a class that stores a vortex strength distribution and calculates the induced angle of attack and the integrals necessary to calculate CL and CDi
+a class that stores a vortex strength distribution and calculates the induced angle of attack and the integrals necessary to calculate CL and CDi.
 ```python
 import vortexLineTool
-vortexTool = vortexLineTool(leadingEdgeGamma,controlPoints)
-vortexTool.getInducedAngle()
-CL = (2/surfaceArea) * vortexTool.getCLintegral()
-CDi = (2/surfaceArea) * vortexTool.getCDintegral()
+vortexTool = vortexLineTool(gamma,controlPoints) #THE INPUTS ARE THE VORTEX STRENGTH AND THE CONTROL POINTS
+vortexTool.getInducedAngle()  #RETURNS A VECTOR THAT CONTAINS THE INDUCED ANGLE OF ATTACK AT EACH CONTROL POINT
+CL = (2/surfaceArea) * vortexTool.getCLintegral() #COMPUTES quad(gamma)
+CDi = (2/surfaceArea) * vortexTool.getCDintegral() #COMPUTES quad(gamma*alfai)
 ```
 
 ## other files
