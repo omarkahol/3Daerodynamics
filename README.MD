@@ -1,8 +1,10 @@
 # 3D AERODYNAMICS
 3DAerodynamics is a collection of classes and scripts that can calculate the performances of 3D lifting surfaces. Three main approaches are succesfully implemented.
+
 1) Prandtl's lifting line theory
 2) Non linear lifting line theory
 3) Vortex lattice method
+
 Inside you can find:
 
 ## AeroFoil in openAirFoilCoordinates.py
