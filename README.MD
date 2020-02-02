@@ -1,7 +1,7 @@
 # 3D AERODYNAMICS
 3DAerodynamics is a collection of classes and scripts that can calculate the performances of 3D lifting surfaces. Inside you can find:
 
-## openAirFoilCoordinates
+## AeroFoil in openAirFoilCoordinates.py
 a class that downloads and reads the coordinates and the performances of an airfoil. Every file is downloaded from the University of Illinois Database
 ```python
 import AeroFoil
@@ -28,7 +28,7 @@ solver.solveSystem() #SOLVE THE SYSTEM OF EQUATIONS AND COMPUTE RELEVANT TERMS
 ```
 The code solves the system of equations and sets each vortex strength to its panel. It also performs a chordwise sum to obatin the leading edge vortex strength used to calculate CL and CDi
 
-## gammaTool
+## vortexLineTool in gammaTool.py
 a class that stores a vortex strength distribution and calculates the induced angle of attack and the integrals necessary to calculate CL and CDi
 ```python
 import vortexLineTool
@@ -39,4 +39,4 @@ CDi = (2/surfaceArea) * vortexTool.getCDintegral()
 ```
 
 ## other files
-the pther files are mainly examples. They include delta wings, non linear methods, flapping wings, ...
+the other files are mainly examples. They include delta wings, non linear methods, flapping wings, ...
