@@ -1,32 +1,31 @@
+__author__ = "Omar Kahol"
+__copyright__ = "Copyright (C) 2020 Omar Kahol"
+__license__ = "Public Domain"
+__version__ = "1.0"
+
 from math import *
 import numpy as np 
 import matplotlib.pyplot as plt 
 from scipy.integrate import quad, simps
+from vortexPanel import VortexPanel
+from vortexLatticeSolver import vortexLatticeSolver
+from openAirfoilCoordinates import AeroFoil
+from gammaTool import vortexLineTool
 
 #READ PROFILE FILE
-fileName = 'NACA0015.dat'
-airFoilData = []
-with open(fileName,'r') as file:
-  for line in file:
-    rawLine = line.split(' ')
-    line = [float(el) for el in rawLine if not el=='']
-    airFoilData.append(line)
-
-airFoilData = np.array(airFoilData)
-alfas = np.radians(airFoilData[:,0])
-cl = airFoilData[:,1]
-
-#FIT DATA
-coeff = np.polyfit(alfas,cl,5)
-getCL = lambda alfa: np.polyval(coeff, alfa)
+airFoilName = 'ag18'
+airFoil = AeroFoil(airFoilName,'airfoilDATA')
+airFoil.downloadPerformance()
+getCL = airFoil.fitCL(5)
 
 #PLOT CL ALFA CURVE
 fig = plt.figure()
 ax = fig.add_subplot(111)
-xaxis = np.linspace(-pi/6,pi/6,100)
-ax.plot(airFoilData[:,0],cl,'k-',lw=2)
-ax.plot(np.degrees(xaxis),[getCL(alfa) for alfa in xaxis],'r--',lw=1)
-ax.set_title('CL-ALPHA CURVE FOR NACA0015 AT RE=1E+6')
+maxAngle = 15
+xaxis = np.linspace(-maxAngle,maxAngle,100)
+ax.plot(airFoil.alfa,airFoil.CL,'k-',lw=2, label='CL-alfa curve')
+ax.plot(xaxis,[getCL(alfa) for alfa in np.radians(xaxis)],'r--',lw=1, label='fitted data')
+ax.set_title('CL-ALPHA CURVE')
 ax.set_xlabel('alpha (deg)')
 ax.set_ylabel('CL')
 plt.show()
@@ -52,52 +51,22 @@ dampingFactor = 0.05
 nPoints = 150
 wingSpanLine = np.linspace(-0.5*wingSpan,0.5*wingSpan,nPoints)
 chords = np.array([chord(Y0) for Y0 in wingSpanLine])
-ellipticalCirculation = lambda y: sqrt(1-(2*y/wingSpan)**2)
-gammaOld = [ellipticalCirculation(Y0) for Y0 in wingSpanLine]
+gammaOld = 0.5*np.ones(nPoints)
 tol = 1e-4
 error = tol + 1
 itmax = 1000
 iteration = 0
 
-#GAMMA FUNCTION
-def getAlphaIvector(dGamma_dy):
-  dy = wingSpanLine[1]-wingSpanLine[0]
-  singularityIndex=0
-  alfaIvector = []
-  #CYCLE THROUGH EVERY SECTION OF THE WING
-  for Y0 in wingSpanLine:
-    integral = 0
-    #COMPUTE THE INTEGRAL FOR EVERY SECTION OF THE WING
-    for i in range(1,nPoints-1,1):
-      multiplier = (dy/(12*pi))
-      if i-1==singularityIndex:
-        secondTerm = 4*dGamma_dy[i]/(Y0-wingSpanLine[i])
-        thirdTerm = dGamma_dy[i+1]/(Y0-wingSpanLine[i+1])
-        firstTerm = 0.5*(secondTerm+thirdTerm)
-      elif i==singularityIndex:
-        firstTerm = dGamma_dy[i-1]/(Y0-wingSpanLine[i-1])
-        thirdTerm = dGamma_dy[i+1]/(Y0-wingSpanLine[i+1])
-        secondTerm = 0.5*(firstTerm+thirdTerm)
-      elif i+1==singularityIndex:
-        firstTerm = dGamma_dy[i-1]/(Y0-wingSpanLine[i-1])
-        secondTerm = 4*dGamma_dy[i]/(Y0-wingSpanLine[i])
-        thirdTerm = 0.5*(firstTerm+secondTerm)
-      else:
-        firstTerm = dGamma_dy[i-1]/(Y0-wingSpanLine[i-1])
-        secondTerm = 4*dGamma_dy[i]/(Y0-wingSpanLine[i])
-        thirdTerm = dGamma_dy[i+1]/(Y0-wingSpanLine[i+1])
-      integral += multiplier*(firstTerm+secondTerm+thirdTerm)
-    alfaIvector.append(integral)
-    singularityIndex += 1
-  return alfaIvector
-
-
 #START ITERATIONS
 while (error > tol) and (iteration < itmax):
   iteration = iteration + 1
-  dGamma_dy = np.gradient(gammaOld,wingSpanLine[1]-wingSpanLine[0])
-  alfaI = getAlphaIvector(dGamma_dy)
-  alfaEff = alphaWing - np.array(alfaI)
+
+  #START THE VORTEX TOOL CLASS
+  vortexTool = vortexLineTool(gammaOld,wingSpanLine)
+  alfaI=vortexTool.getInducedAngle()
+
+  #COMPUTE NEW CIRCULATION
+  alfaEff = alphaWing - alfaI
   clWing = np.array([getCL(alfa) for alfa in alfaEff])
   gammaNew = 0.5*chords*clWing
   error = np.linalg.norm(gammaNew-gammaOld)
@@ -109,12 +78,14 @@ ITERATION RESULTS
   final error --> {1}
 ----------------------------'''.format(iteration,round(error,5)))
 
-
 #COMPUTE AERODINAMIC DATA
+vortexTool = vortexLineTool(gammaOld,wingSpanLine)
+vortexTool.getInducedAngle()
+
 surface = pi*0.25*wingSpan*maxChord
 AR = (wingSpan**2)/surface
-CL = (2/surface) * simps(gammaNew,wingSpanLine)
-CDi = (2/surface) * simps(gammaNew*alfaI,wingSpanLine)
+CL = (2/surface) * vortexTool.getCLintegral()
+CDi = (2/surface) * vortexTool.getCDintegral()
 
 print('''
 ------------------------

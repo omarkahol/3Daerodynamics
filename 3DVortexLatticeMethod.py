@@ -6,13 +6,32 @@ __version__ = "1.0"
 from math import *
 import numpy as np 
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from scipy.integrate import simps
 from vortexPanel import VortexPanel
 from vortexLatticeSolver import vortexLatticeSolver
 from openAirfoilCoordinates import AeroFoil
 from gammaTool import vortexLineTool
 
-#GEOMETRY --> DELTA WING AND DISCRETIZATION
+
+#OPEN THE AIRFOIL PROFILE AND GET THE CAMBER LINE
+airFoilName = 'ag18'
+airFoil = AeroFoil(airFoilName,'airfoilDATA')
+getCamber = airFoil.fitCamberLine(4)
+
+#PLOT THE MEAN CAMBER LINE
+fig=plt.figure()
+ax=fig.add_subplot(111)
+ax.plot(airFoil.xBase,airFoil.yBase,'k-',label='profile')
+xAxis = np.linspace(0,1,100)
+yCamberData= [getCamber(x) for x in xAxis]
+ax.plot(xAxis,yCamberData,'r--', label='fitted camber line')
+ax.legend()
+ax.set_title('AIRFOIL PROFILE')
+plt.show()
+
+
+#GEOMETRY DELTA WING AND DISCRETIZATION
 wingSpan = 10
 maxChord = 10
 wingBorder = lambda y: 2*(maxChord/wingSpan)*abs(y)
@@ -20,10 +39,9 @@ nPointsY = 21
 nPointsX = 11
 wingSpanLine = np.linspace(-0.5*wingSpan, 0.5*wingSpan,nPointsY)
 panels=[]
-for i in range(1,nPointsY):
+for i in range(2,nPointsY-1):
   Y1 = wingSpanLine[i-1]
   Y2 = wingSpanLine[i]
-
   Y3, Y4 = Y1, Y2
   lim1 = wingBorder(Y1)
   lim2 = wingBorder(Y2)
@@ -36,47 +54,43 @@ for i in range(1,nPointsY):
     X2 = xArray2[j-1]
     X3 = xArray1[j]
     X4 = xArray2[j]
-    panels.append(VortexPanel((X1,Y1,0),(X2,Y2,0),(X3,Y3,0),(X4,Y4,0)))
+    Z1 = getCamber((maxChord-X1)/(maxChord-lim1))
+    Z2 = getCamber((maxChord-X2)/(maxChord-lim2))
+    Z3 = getCamber((maxChord-X3)/(maxChord-lim1))
+    Z4 = getCamber((maxChord-X4)/(maxChord-lim2))
+    panels.append(VortexPanel((X1,Y1,Z1),(X2,Y2,Z2),(X3,Y3,Z3),(X4,Y4,Z4)))
 
-#DRAW GEOMETRY
+#DRAW WING
 fig = plt.figure()
-ax = fig.add_subplot(111,ylim=(-0.5*wingSpan,0.5*wingSpan), xlim=(0,maxChord))
+ax = fig.add_subplot(111, projection='3d',aspect='equal',zlim=(0,0.2))
 for panel in panels:
-  panel.drawPanel2D(ax)
-ax.set_ylabel('y [m]')
-ax.set_xlabel('x [m]')
-ax.set_title('WING GEOMETRY AND DISCRETIZATION')
+  panel.drawPanel3D(ax)
 plt.show()
 
 #WING DATA
-alfa = 10 #degrees
-Vinf = 1 #m/s
+Vinf = 1
+alfa = 12
 
-#INITIALIZE SOLVER AND SOLVE SYSTEM
+#BUILD THE SOLVER
 solver = vortexLatticeSolver(panels)
-solver.setDynamicData(alfa,Vinf)
+solver.setDynamicData(alfa, Vinf)
+
+#SOLVE THE SYSTEM
 solver.solveSystem()
 
-#PLOT RESULTS
+#DISPLAY VORTEX STRENGTH DISTRIBUITION
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 ax.scatter([panel.Xcontrol for panel in panels],[panel.Ycontrol for panel in panels],solver.solution)
 ax.plot([maxChord,maxChord],[-0.5*wingSpan, 0.5*wingSpan],[0,0], 'k-')
 ax.plot([0,maxChord],[0, 0.5*wingSpan],[0,0], 'k-')
 ax.plot([0,maxChord],[0,-0.5*wingSpan],[0,0], 'k-')
-ax.set_xlabel('x [m]')
-ax.set_ylabel('y [m]')
-ax.set_zlabel('gamma [m^2/s]')
-ax.set_title('VORTEX STRENGHT DISTRIBUTION')
 plt.show()
 
-
+#DISPLAY LEADING EDGE VORTEX STRENGTH DISTRIBUTION
 fig = plt.figure()
 ax = fig.add_subplot(111)
-ax.plot(solver.controlPoints,solver.leadingEdgeGamma,'k-',lw=2)
-ax.set_xlabel('wingSpan [m]')
-ax.set_ylabel('gamma [m^2/s]')
-ax.set_title('LEADING EDGE TOTAL CIRCULATION')
+ax.plot(solver.controlPoints,solver.leadingEdgeGamma)
 plt.show()
 
 #COMPUTE AERODINAMIC DATA
