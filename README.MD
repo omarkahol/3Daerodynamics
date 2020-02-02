@@ -23,8 +23,11 @@ a class that stores the main vertices of a panel. It also computes relevat point
 The order is 
 
 P1----P2         |------Y direction
+
 |      |         |
+
 |      |         |
+
 P3----P4         X direction
 
 The control point is located at about 75% of the mean Y distance and the points that generate the vortex at about 25% of the distance. This choice can cause numerical errors since 25 is a divisor of 75 so one panel can easily have the control coordinate equal to the generation coordinate of the other. This is why I have chosen two slightly different numbers. 
