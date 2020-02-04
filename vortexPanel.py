@@ -18,14 +18,22 @@ from mpl_toolkits.mplot3d import Axes3D
 #INPUTS --> 4 points, i.e. the vertices of a panel in 3D
 class VortexPanel:
   def __init__(self,p1,p2,p3,p4):
+
+    #BASIC VECTORS
+    self.iVector = np.array([1,0,0])
+    self.jVector = np.array([0,1,0])
+    self.kVector = np.array([0,0,1])
+
     #SET UP THE COORDINATES OF THE POINTS
     self.X1, self.X2, self.X3, self.X4 = p1[0],p2[0],p3[0],p4[0]
     self.Y1, self.Y2, self.Y3, self.Y4 = p1[1],p2[1],p3[1],p4[1]
     self.Z1, self.Z2, self.Z3, self.Z4 = p1[2],p2[2],p3[2],p4[2]
 
     #APPROXIMATION OF WIDTH AND HEIGHT OF THE PANEL
-    self.DY = self.Y2-self.Y1
-    self.DX =self.X3-self.X1
+    self.DY = abs(self.Y2-self.Y1)
+    self.DX1 =abs(self.X3-self.X1)
+    self.DX2 = abs(self.X4 -self.X2)
+    self.DX = 0.5*(self.DX1 +self.DX2)
 
     #THE VORTEX APPLICATION POINT SHOULD BE AT ABOUT 25% OF THE CHORD AND THE CONTROL POINT AT 75%
     #IF THE DISCRETIZATION IS VERY DENSE, NUMERICAL ERRORS CAN ARISE.
@@ -70,11 +78,11 @@ class VortexPanel:
     ax.plot([self.X4,self.X3],[self.Y4,self.Y3], [self.Z4,self.Z3], 'k-', lw =2)
     ax.plot([self.X3,self.X1],[self.Y3,self.Y1], [self.Z3,self.Z1], 'k-', lw =2)
 
-    ax.plot([self.Xapply1],[self.Yapply1],[self.Zapply1],'b*',lw=1)
-    ax.plot([self.Xapply2],[self.Yapply2],[self.Zapply2],'b+',lw=1)
+    ap1, = ax.plot([self.Xapply1],[self.Yapply1],[self.Zapply1],'b*',lw=1, label='application point 1')
+    ap2, = ax.plot([self.Xapply2],[self.Yapply2],[self.Zapply2],'b+',lw=1, label='application point 2')
 
-    ax.plot([self.Xcontrol],[self.Ycontrol],[self.Zcontrol],'ro',lw=1)
-    return True
+    cp, = ax.plot([self.Xcontrol],[self.Ycontrol],[self.Zcontrol],'ro',lw=1, label='control point')
+    return [ap1,ap2,cp]
   
   def drawPanel2D(self,ax):
     #DRAW THE PANEL
@@ -92,3 +100,12 @@ class VortexPanel:
   def setGamma(self, gamma):
     #SET THE VORTEX STRENGTH
     self.gamma = gamma
+  
+  def setTotalInducedVelocity(self, vel):
+    #SET LOCAL TANGENTIAL VELOCITY
+    self.inducedVelocity = vel
+  
+  def getForce(self):
+    #COMPUTE TOTAL FORCE
+    self.R0 = (self.Xapply2-self.Xapply1)*self.iVector + (self.Yapply2-self.Yapply1)*self.jVector +(self.Zapply2-self.Zapply1)*self.kVector
+    return np.cross(self.inducedVelocity,self.R0)*self.gamma

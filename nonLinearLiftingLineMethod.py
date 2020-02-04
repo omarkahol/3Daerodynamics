@@ -13,7 +13,7 @@ from openAirfoilCoordinates import AeroFoil
 from gammaTool import vortexLineTool
 
 #READ PROFILE FILE
-airFoilName = 'ag18'
+airFoilName = 'n2h15'
 airFoil = AeroFoil(airFoilName,'airfoilDATA')
 airFoil.downloadPerformance()
 getCL = airFoil.fitCL(5)
@@ -31,28 +31,46 @@ ax.set_ylabel('CL')
 plt.show()
 
 #WING DATA 
-wingSpan = 16
+wingSpan = 20
 maxChord = 2
-chord = lambda y: maxChord*sqrt(1-(2*y/wingSpan)**2)
-alphaWing = radians(5)
+wingSlope=1.6
+chord = lambda y: maxChord - wingSlope*(maxChord/wingSpan)*abs(y)
+alfaWing = radians(5)
+Vinf = 1
 
-#PLOT WING
+#PANELIZE THE WING COMPUTE THE SURFACE AREA AND DRAW RESULTS
+nPanels = 50
+panels = []
+wingSpanLine = np.linspace(-0.5*wingSpan,0.5*wingSpan, nPanels)
+surfaceArea = 0
+for i in range(1,nPanels):
+  Y1 = wingSpanLine[i-1]
+  Y2 = wingSpanLine[i]
+  Y3, Y4 = Y1, Y2
+  X1 = 0.5*chord(Y1)
+  X2 = 0.5*chord(Y2)
+  X3, X4 = -X1, -X2
+  panel = VortexPanel([X1,Y1,0],[X2,Y2,0],[X3,Y3,0],[X4,Y4,0])
+  surfaceArea += panel.surfaceArea
+  panels.append(panel)
+
 fig = plt.figure()
-lim = (-0.5*wingSpan,0.5*wingSpan)
-ax = fig.add_subplot(111,aspect='equal',xlim=lim,ylim=lim)
-nPoints = 100
-t = np.linspace(0,2*pi,nPoints)
-ax.plot(0.5*wingSpan*np.cos(t),0.5*maxChord*np.sin(t))
-ax.set_title('WING GEOMETRY')
+ax = fig.add_subplot(111,ylim=(-0.5*wingSpan,0.5*wingSpan), xlim=(-0.5*maxChord,0.5*maxChord))
+for panel in panels:
+  panel.drawPanel2D(ax)
+ax.set_ylabel('y [m]')
+ax.set_xlabel('x [m]')
+ax.set_title('WING DESIGN')
 plt.show()
 
+
 #SET ITERATION DATA
-dampingFactor = 0.05
-nPoints = 150
+dampingFactor = 0.02
+nPoints = 100
 wingSpanLine = np.linspace(-0.5*wingSpan,0.5*wingSpan,nPoints)
 chords = np.array([chord(Y0) for Y0 in wingSpanLine])
-gammaOld = 0.5*np.ones(nPoints)
-tol = 1e-4
+gammaOld = [chord(Y0) for Y0 in wingSpanLine]
+tol = 1e-2
 error = tol + 1
 itmax = 1000
 iteration = 0
@@ -62,13 +80,15 @@ while (error > tol) and (iteration < itmax):
   iteration = iteration + 1
 
   #START THE VORTEX TOOL CLASS
-  vortexTool = vortexLineTool(gammaOld,wingSpanLine)
+  vortexTool = vortexLineTool(gammaOld,wingSpanLine,Vinf)
   alfaI=vortexTool.getInducedAngle()
 
   #COMPUTE NEW CIRCULATION
-  alfaEff = alphaWing - alfaI
+  alfaEff = alfaWing - alfaI
   clWing = np.array([getCL(alfa) for alfa in alfaEff])
   gammaNew = 0.5*chords*clWing
+  gammaNew[0]=0
+  gammaNew[-1] = 0
   error = np.linalg.norm(gammaNew-gammaOld)
   gammaOld = gammaOld + dampingFactor*(gammaNew-gammaOld)
 
@@ -79,22 +99,25 @@ ITERATION RESULTS
 ----------------------------'''.format(iteration,round(error,5)))
 
 #COMPUTE AERODINAMIC DATA
-vortexTool = vortexLineTool(gammaOld,wingSpanLine)
+vortexTool = vortexLineTool(gammaOld,wingSpanLine,Vinf)
 vortexTool.getInducedAngle()
 
-surface = pi*0.25*wingSpan*maxChord
-AR = (wingSpan**2)/surface
-CL = (2/surface) * vortexTool.getCLintegral()
-CDi = (2/surface) * vortexTool.getCDintegral()
+AR = (wingSpan**2)/surfaceArea
+CL = (2/surfaceArea) * vortexTool.getCLintegral()
+CDi = (2/surfaceArea) * vortexTool.getCDintegral()
+efficiency = (CL**2)/(pi*AR*CDi)
 
 print('''
 ------------------------
 AERODYNAMIC DATA
-  surface --> {0} m^2
-  AR --> {1}
-  CL --> {2}
-  CDi --> {3}
-------------------------'''.format(round(surface,3),round(AR,4),round(CL,4),round(CDi,4)))
+  surface --> {0} [m^2]
+  alfa = {1} [°deg]
+  Vinf = {2} [m/s]
+  AR --> {3}
+  CL --> {4}
+  CDi --> {5}
+  efficiency = {6}
+------------------------'''.format(round(surfaceArea,3),round(degrees(alfaWing),3),round(Vinf),round(AR,4),round(CL,4),round(CDi,4), round(efficiency,4)))
 
 #PLOT CIRCULATION
 fig = plt.figure()

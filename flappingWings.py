@@ -58,12 +58,12 @@ def getPanels(theta):
       panels.append(VortexPanel((X1,Y1,Z1),(X2,Y2,Z2),(X3,Y3,Z3),(X4,Y4,Z4)))
   return panels
 
-panels = getPanels(radians(20))
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d',zlim=(-5,5), ylim=(-5,5), xlim=(0,10))
-
+ax.set_title('FLAPPING WING ANIMATION')
 lineCollection = []
-for panel in panels:
+nPoints = len(getPanels(0))
+for panel in range(nPoints):
   line, = ax.plot([],[],[],'k-',lw=2)
   line1, = ax.plot([],[],[],'k-',lw=2)
   line2, = ax.plot([],[],[],'k-',lw=2)
@@ -76,7 +76,7 @@ timeArray = []
 CLarray = []
 thetaArray=[]
 Vinf = 1
-alfa = 17
+alfa = 5
 def animate(i):
   global dt, currentTime
   theta = (pi/4)*sin(currentTime)
@@ -106,8 +106,19 @@ def animate(i):
 
 ani = animation.FuncAnimation(fig, animate, interval=1, blit=False)
 plt.show(ani)
-plt.plot(timeArray,CLarray)
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_title('LIFT COEFFICIENT AS A FUNCTION OF TIME')
+ax.set_xlabel('time [s]')
+ax.set_ylabel('CL')
+ax.plot(timeArray,CLarray,'k-',lw=2)
 plt.show()
 
-plt.plot(thetaArray,CLarray)
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_title('LIFT COEFFICIENT AS A FUNCTION OF THE FLAPPING ANGLE')
+ax.set_xlabel('theta [°deg]')
+ax.set_ylabel('CL')
+plt.plot(np.degrees(thetaArray),CLarray)
 plt.show()

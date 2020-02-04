@@ -15,12 +15,15 @@ class AeroFoil:
     self.dataFolder = dataFolder
     self.airFoilName = airFoilName
     self.airFoilFile = self.dataFolder+'/'+self.airFoilName+'_coordinates.dat'
-    self.airFoilURL = 'https://m-selig.ae.illinois.edu/ads/coord/'+airFoilName+'.dat'
+    self.airFoilURL = 'https://m-selig.ae.illinois.edu/ads/coord_updates/'+airFoilName.upper()+'.DAT'
 
     if not os.path.isfile(self.airFoilFile):
       print('downloading airfoil file...')
-      urllib.request.urlretrieve(self.airFoilURL, self.airFoilFile)
-
+      try:
+        urllib.request.urlretrieve(self.airFoilURL, self.airFoilFile)
+      except:
+        self.airFoilURL = 'https://m-selig.ae.illinois.edu/ads/coord/'+airFoilName+'.dat'
+        urllib.request.urlretrieve(self.airFoilURL, self.airFoilFile)
     self.__readCoords__()
     return None
 
@@ -38,8 +41,9 @@ class AeroFoil:
             float(n.strip())
         except:
           continue
-        self.xBase.append(float(numbers[0].strip()))
-        self.yBase.append(float(numbers[1].strip()))
+        if not float(numbers[0].strip()) > 1:
+          self.xBase.append(float(numbers[0].strip()))
+          self.yBase.append(float(numbers[1].strip()))
     self.xBase=np.array(self.xBase)
     self.yBase=np.array(self.yBase)
     return True

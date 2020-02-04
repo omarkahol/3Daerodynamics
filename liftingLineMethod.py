@@ -1,6 +1,7 @@
 from math import *
 import numpy as np 
 import matplotlib.pyplot as plt 
+from gammaTool import vortexLineTool
 
 #WING DATA 
 wingSpan = 16
@@ -82,3 +83,11 @@ ax.set_title('CIRCULATION')
 ax.set_xlabel('wingSpan')
 ax.set_ylabel('gamma')
 plt.show()
+
+vortexTool = vortexLineTool(gamma,xaxis,Vinf)
+vortexTool.getInducedAngle()
+
+AR = (wingSpan**2)/surface
+CL = (2/surface) * vortexTool.getCLintegral()
+CDi = (2/surface) * vortexTool.getCDintegral()
+print(CL,CDi,(CL**2)/(pi*AR*CDi))

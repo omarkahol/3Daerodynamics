@@ -12,10 +12,16 @@ from vortexLatticeSolver import vortexLatticeSolver
 from openAirfoilCoordinates import AeroFoil
 from gammaTool import vortexLineTool
 
-#GEOMETRY --> DELTA WING AND DISCRETIZATION
+#GEOMETRY --> DELTA BORDER
 wingSpan = 10
 maxChord = 10
 wingBorder = lambda y: 2*(maxChord/wingSpan)*abs(y)
+
+#GEOMETRY --> DELTA NOTCH
+maxNotch = 0.1*maxChord
+notch = lambda y: maxNotch - 2*(maxNotch/wingSpan)*abs(y)
+
+#DISCRETIZE
 nPointsY = 21
 nPointsX = 11
 wingSpanLine = np.linspace(-0.5*wingSpan, 0.5*wingSpan,nPointsY)
@@ -28,8 +34,8 @@ for i in range(1,nPointsY):
   lim1 = wingBorder(Y1)
   lim2 = wingBorder(Y2)
 
-  xArray1 = np.linspace(lim1, maxChord, nPointsX)
-  xArray2 = np.linspace(lim2, maxChord, nPointsX)
+  xArray1 = np.linspace(lim1, maxChord-notch(Y1), nPointsX)
+  xArray2 = np.linspace(lim2, maxChord-notch(Y2), nPointsX)
 
   for j in range(1, nPointsX):
     X1 = xArray1[j-1]
@@ -40,7 +46,7 @@ for i in range(1,nPointsY):
 
 #DRAW GEOMETRY
 fig = plt.figure()
-ax = fig.add_subplot(111,ylim=(-0.5*wingSpan,0.5*wingSpan), xlim=(0,maxChord))
+ax = fig.add_subplot(111,ylim=(-0.5*wingSpan,0.5*wingSpan))
 for panel in panels:
   panel.drawPanel2D(ax)
 ax.set_ylabel('y [m]')
@@ -61,7 +67,8 @@ solver.solveSystem()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 ax.scatter([panel.Xcontrol for panel in panels],[panel.Ycontrol for panel in panels],solver.solution)
-ax.plot([maxChord,maxChord],[-0.5*wingSpan, 0.5*wingSpan],[0,0], 'k-')
+ax.plot([maxChord,maxChord-notch(0)],[-0.5*wingSpan, 0],[0,0], 'k-')
+ax.plot([maxChord-notch(0), maxChord],[0, 0.5*maxChord],[0,0], 'k-')
 ax.plot([0,maxChord],[0, 0.5*wingSpan],[0,0], 'k-')
 ax.plot([0,maxChord],[0,-0.5*wingSpan],[0,0], 'k-')
 ax.set_xlabel('x [m]')
@@ -80,12 +87,9 @@ ax.set_title('LEADING EDGE TOTAL CIRCULATION')
 plt.show()
 
 #COMPUTE AERODINAMIC DATA
-vortexTool = vortexLineTool(solver.leadingEdgeGamma,solver.controlPoints)
-vortexTool.getInducedAngle()
+CDi, CS, CL = solver.getAerodynamicCoefficients()
 AR = (wingSpan**2)/solver.surfaceArea
-CL = (2/solver.surfaceArea) * vortexTool.getCLintegral()
-CDi = (2/solver.surfaceArea) * vortexTool.getCDintegral()
-
+efficiency=(CL**2)/(pi*AR*CDi)
 print('''
 ------------------------
 AERODYNAMIC DATA
@@ -93,4 +97,5 @@ AERODYNAMIC DATA
   AR --> {1}
   CL --> {2}
   CDi --> {3}
-------------------------'''.format(round(solver.surfaceArea,3),round(AR,4),round(CL,4),round(CDi,4)))
+  efficiency --> {4}
+------------------------'''.format(round(solver.surfaceArea,3),round(AR,4),round(CL,4),round(CDi,4), round(efficiency,3)))

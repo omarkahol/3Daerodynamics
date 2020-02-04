@@ -12,15 +12,18 @@ from vortexLatticeSolver import vortexLatticeSolver
 from openAirfoilCoordinates import AeroFoil
 from gammaTool import vortexLineTool
 
-#GEOMETRY AND WING DISCRETIZATION
-wingSpan = 10
+#WINGA DATA
+wingSpan = 20
 chord = 2
 baseChord = 1
-nPoints = 21
+nPoints = 51
 wingSpanLine = np.linspace(-0.5*wingSpan, 0.5*wingSpan,nPoints)
 
-trailingEdgeBound = lambda y: leadingEdgeBound(y)+chord
-leadingEdgeBound = lambda y: 2*(baseChord/wingSpan)*abs(y)
+#DEFINE WING GEOMETRY
+trailingEdgeSlope= 0.5
+leadingEdgeSlope = 3
+trailingEdgeBound = lambda y: trailingEdgeSlope*(baseChord/wingSpan)*abs(y) + chord
+leadingEdgeBound = lambda y: leadingEdgeSlope*(baseChord/wingSpan)*abs(y)
 
 panels=[]
 for i in range(1,nPoints):
@@ -41,7 +44,7 @@ for i in range(1,nPoints):
 
 #DRAW GEOMETRY
 fig = plt.figure()
-ax = fig.add_subplot(111,ylim=(-0.5*wingSpan,0.5*wingSpan), xlim=(0,trailingEdgeBound(0.5*wingSpan)))
+ax = fig.add_subplot(111,ylim=(-0.5*wingSpan,0.5*wingSpan), xlim=(0,2*chord))
 for panel in panels:
   panel.drawPanel2D(ax)
 ax.set_ylabel('y [m]')
@@ -67,14 +70,19 @@ ax.set_title('VORTEX STRENGTH')
 ax.plot(solver.controlPoints, solver.leadingEdgeGamma, 'k-',lw=2)
 plt.show()
 
+#COMPUTE THE TAPER RATION
+ctChord = trailingEdgeBound(0)-leadingEdgeBound(0)
+crChord = trailingEdgeBound(0.5*wingSpan)-leadingEdgeBound(0.5*wingSpan)
+taperRatio = ctChord/crChord
+
+#COMPUTE THE SWEEP ANGLE AT THE HALF CHORD LINE
+xEnd = leadingEdgeBound(0.5*wingSpan) + 0.5*(trailingEdgeBound(0.5*wingSpan)-leadingEdgeBound(0.5*wingSpan))
+xStart = leadingEdgeBound(0) + 0.5*(trailingEdgeBound(0)-leadingEdgeBound(0))
+lambdaAngle = atan((xEnd-xStart)/(0.5*wingSpan))
 
 #COMPUTE AERODINAMIC DATA
-vortexTool = vortexLineTool(solver.leadingEdgeGamma,solver.controlPoints)
-vortexTool.getInducedAngle()
+CDi, CS, CL = solver.getAerodynamicCoefficients()
 AR = (wingSpan**2)/solver.surfaceArea
-CL = (2/solver.surfaceArea) * vortexTool.getCLintegral()
-CDi = (2/solver.surfaceArea) * vortexTool.getCDintegral()
-
 print('''
 ------------------------
 AERODYNAMIC DATA
@@ -83,3 +91,15 @@ AERODYNAMIC DATA
   CL --> {2}
   CDi --> {3}
 ------------------------'''.format(round(solver.surfaceArea,3),round(AR,4),round(CL,4),round(CDi,4)))
+
+#VALIDATE AERODYNAMIC DATA WITH KUCHEMANN'S FORMULA
+a0 = 2*pi
+dCLda = a0*cos(lambdaAngle)/(sqrt(1+(a0*cos(lambdaAngle)/(pi*AR))) + (a0*cos(lambdaAngle)/(pi*AR)))
+print('''
+------------------------
+DATA VALIDATION
+  taper ratio --> {0}
+  sweep angle --> {1} [°deg]
+  dCLda --> {2}
+  CL --> {3}
+------------------------'''.format(round(taperRatio,3),round(degrees(lambdaAngle),3), round(dCLda,3), round(dCLda*radians(alfa),5)))

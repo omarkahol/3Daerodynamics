@@ -25,6 +25,7 @@ class vortexLatticeSolver:
   def setDynamicData(self,alfa, Vinf, isDegrees=True):
     self.alfa = radians(alfa) if isDegrees else alfa
     self.Vinf = abs(Vinf)
+    self.rotationMatrix = np.array([[cos(self.alfa),0,sin(self.alfa)],[0,1,0],[-sin(self.alfa),0,cos(self.alfa)]])
     self.__buildSystem__()
     return True
 
@@ -106,3 +107,57 @@ class vortexLatticeSolver:
       self.leadingEdgeGamma.append(sum(gammaDict[key]))
       self.controlPoints.append(float(key))
     return True
+  
+  def __computeVelocityField__(self):
+    for m in range(self.nPoints):
+      VTOT = self.Vinf*np.array([cos(self.alfa),0,sin(self.alfa)])
+      for n in range(self.nPoints):
+        xm = self.panels[m].Xcontrol
+        ym = self.panels[m].Ycontrol
+        zm = self.panels[m].Zcontrol
+
+        y2n = self.panels[n].Yapply2
+        y1n = self.panels[n].Yapply1
+        x1n = self.panels[n].Xapply1
+        x2n = self.panels[n].Xapply2
+        z1n = self.panels[n].Zapply1
+        z2n = self.panels[n].Zapply2
+
+        r0 = (x2n-x1n)*self.iVector + (y2n-y1n)*self.jVector + (z2n-z1n)*self.kVector
+        r1 = (xm-x1n)*self.iVector + (ym-y1n)*self.jVector + (zm-z1n)*self.kVector
+        r2 = (xm-x2n)*self.iVector + (ym-y2n)*self.jVector + (zm-z2n)*self.kVector
+
+        # VORTEX STRUCTURE
+        #
+        # A-------B
+        # |       |
+        # |       |
+        # |       |
+        #INF     INF
+
+        #CALCULATE THE INDUCED VELOCITY BY AB SEGMENT 
+        F10 = np.cross(r1,r2)/(np.linalg.norm(np.cross(r1,r2))**2)
+        F20 = np.dot(r0, (r1/np.linalg.norm(r1))-(r2/np.linalg.norm(r2)))
+        VAB = (0.25/pi)*F10*F20
+
+        #CALCULATE INDUCED VELOCITY BY A-INF SEGMENT
+        F11 = (0.25/pi)*((zm-z1n)*self.jVector +(y1n-ym)*self.kVector)/((zm-z1n)**2 + (y1n-ym)**2)
+        F21 = 1 + (xm-x1n)/np.linalg.norm(r1)
+        VAI = F11*F21
+
+        #CALCULATE INDUCED VELOCITY BY B-INF SEGMENT
+        F12 = (0.25/pi)*((zm-z2n)*self.jVector +(y2n-ym)*self.kVector)/((zm-z2n)**2 + (y2n-ym)**2)
+        F22 = 1 + (xm-x2n)/np.linalg.norm(r2)
+        VBI = -F12*F22
+
+        #TOTAL INDUCED VELOCITY
+        VTOT += self.panels[n].gamma*(VAB + VAI + VBI) 
+      self.panels[m].setTotalInducedVelocity(VTOT)
+    return True
+  
+  def getAerodynamicCoefficients(self):
+    self.__computeVelocityField__()
+    force = 0
+    for panel in self.panels:
+        force += panel.getForce()
+    return (2/self.surfaceArea)*self.rotationMatrix.dot(force)
