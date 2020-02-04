@@ -31,6 +31,9 @@ solver.setDynamicData(alfa, Vinf) #SET THE ANGLE OF ATTACK AND THE FREESTREAM VE
 #THE CLASS WILL AUTOMATICALLY BUILD THE VORTICITY MATRIX AND THE RHS
 
 solver.solveSystem() #SOLVE THE SYSTEM OF EQUATIONS AND COMPUTE RELEVANT TERMS
+#THE CLASS WILL COMPUTE THE FORCE FIELD WITH KUTTA JUKOWSKY THEOREM
+
+CL, CS, CDi = solver.getAerodynamicCoefficients() #INTEGRATE FORCE FIELD
 ```
 The code solves the system of equations and sets each vortex strength to its panel. It also performs a chordwise sum to obatin the leading edge vortex strength used to calculate CL and CDi
 
