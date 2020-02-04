@@ -35,7 +35,7 @@ solver.solveSystem() #SOLVE THE SYSTEM OF EQUATIONS AND COMPUTE RELEVANT TERMS
 
 CL, CS, CDi = solver.getAerodynamicCoefficients() #INTEGRATE FORCE FIELD
 ```
-The code solves the system of equations and sets each vortex strength to its panel. It also performs a chordwise sum to obatin the leading edge vortex strength used to calculate CL and CDi
+The code solves the system of equations and sets each vortex strength to its panel. The method getAerodynamicCoeffients() computes the total induced velocity vector on each panel. The vortexPanel class is then used to calculate, using Kutta's theorem, the force field on the entire wing. A quick summation and rotation returns the aerodynamic coefficients
 
 ## vortexLineTool in gammaTool.py
 a class that stores a vortex strength distribution and calculates the induced angle of attack and the integrals necessary to calculate CL and CDi.
