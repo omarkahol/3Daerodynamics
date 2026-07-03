@@ -43,8 +43,15 @@ def save_vtu(filepath, mesher, panels, solver_type, decamber_angles=None, coeffi
     n_span = mesher.n_span
     n_chord = mesher.n_chord
     
+    # Spanwise nodes
     y_nodes = np.linspace(-0.5 * mesher.span, 0.5 * mesher.span, n_span)
-    s_nodes = np.linspace(0.0, 1.0, n_chord)
+    blend_factor = float(mesher.mesh_cfg.get("blend_factor", 0.5))
+    
+    beta = np.linspace(0.0, np.pi / 2.0, n_chord)
+    s_cosine = 1.0 - np.cos(beta)
+    s_linear = np.linspace(0.0, 1.0, n_chord)
+    s_nodes = (1.0 - blend_factor) * s_linear + blend_factor * s_cosine
+    # ------------------------------------------------
     
     points = []
     for y in y_nodes:
@@ -52,8 +59,11 @@ def save_vtu(filepath, mesher, panels, solver_type, decamber_angles=None, coeffi
             chord, x_le, z_le, twist_rad, z_camber = mesher._interpolate_station_properties(y, s)
             dx = s * chord
             dz = z_camber
+            
+            # Apply twist rotation
             x_rot = dx * np.cos(twist_rad) - dz * np.sin(twist_rad)
             z_rot = dx * np.sin(twist_rad) + dz * np.cos(twist_rad)
+            
             points.append([x_le + x_rot, y, z_le + z_rot])
             
     points = np.array(points)

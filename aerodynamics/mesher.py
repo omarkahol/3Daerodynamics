@@ -84,9 +84,24 @@ class WingMesher:
         return chord, x_le, z_le, twist_rad, z_camber
 
     def generate_mesh(self) -> List[VortexPanel]:
-        """Generates the mesh grid and returns a list of VortexPanel objects."""
+        """Generates the mesh grid and returns a list of VortexPanel objects.
+        
+        Args:
+            blend_factor (float): Blends linear and half-cosine spacing. 
+                                  0.0 is pure linear, 1.0 is pure half-cosine.
+                                  0.4 to 0.7 is recommended for subsonic Near-Field VLM.
+        """
+        # Spanwise nodes (Currently linear)
         y_nodes = np.linspace(-0.5 * self.span, 0.5 * self.span, self.n_span)
-        s_nodes = np.linspace(0.0, 1.0, self.n_chord)
+        
+        # Chordwise nodes: Blended Spacing
+        beta = np.linspace(0.0, np.pi / 2.0, self.n_chord)
+        s_cosine = 1.0 - np.cos(beta)
+        s_linear = np.linspace(0.0, 1.0, self.n_chord)
+        
+        # The blending equation
+        blend_factor = float(self.mesh_cfg.get("blend_factor", 0.5))
+        s_nodes = (1.0 - blend_factor) * s_linear + blend_factor * s_cosine
 
         grid = np.zeros((self.n_span, self.n_chord, 3))
 

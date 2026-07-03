@@ -29,8 +29,8 @@
       },
       {
         "y": 11.0,
-        "chord": 0.7,
-        "x_le": 2.95,
+        "chord": 1.0,
+        "x_le": 3.8,
         "z_le": 0.8,
         "twist_deg": -2.0,
         "airfoil_name": "ag18"
@@ -38,12 +38,13 @@
     ]
   },
   "meshing": {
-    "n_span": 51,
-    "n_chord": 21
+    "n_span": 50,
+    "n_chord": 50,
+    "blend_factor": 0.95
   },
   "solver": {
     "alfa_deg": 5.0,
-    "v_inf": 10.0,
+    "v_inf": 100.0,
     "damping_factor": 0.02,
     "tol": 0.001,
     "max_iter": 1000
