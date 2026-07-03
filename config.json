@@ -1,0 +1,51 @@
+{
+  "solver_type": "NL-VLM",
+  "output_file": "solver_results.vtu",
+  "wing": {
+    "stations": [
+      {
+        "y": 0.0,
+        "chord": 2.1,
+        "x_le": 0.0,
+        "z_le": 0.0,
+        "twist_deg": 2.5,
+        "airfoil_name": "n0012"
+      },
+      {
+        "y": 3.0,
+        "chord": 1.65,
+        "x_le": 0.82,
+        "z_le": 0.2,
+        "twist_deg": 1.0,
+        "airfoil_name": "n0012"
+      },
+      {
+        "y": 7.0,
+        "chord": 1.15,
+        "x_le": 1.9,
+        "z_le": 0.5,
+        "twist_deg": -0.5,
+        "airfoil_name": "ag18"
+      },
+      {
+        "y": 11.0,
+        "chord": 0.7,
+        "x_le": 2.95,
+        "z_le": 0.8,
+        "twist_deg": -2.0,
+        "airfoil_name": "ag18"
+      }
+    ]
+  },
+  "meshing": {
+    "n_span": 51,
+    "n_chord": 21
+  },
+  "solver": {
+    "alfa_deg": 5.0,
+    "v_inf": 10.0,
+    "damping_factor": 0.02,
+    "tol": 0.001,
+    "max_iter": 1000
+  }
+}
