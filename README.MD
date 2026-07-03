@@ -197,7 +197,7 @@ An interactive diagnostic tool is included to perform individual wing station (s
    \[\mathrm{Re} = \frac{V_{\infty} c}{\nu}\]
    and automatically matches and downloads the closest standard experimental polar dataset from AirfoilTools.
 4. Export options:
-   * **CSV Export**: Writes a database of fitted lift (\(C_l\)) and drag (\(C_d\)) coefficients from \(\alpha = -10^{\circ}\) to \(15^{\circ}\) to `plots/station_{idx}_polar_{Re}.csv`.
+   * **CSV Export**: Writes a database of fitted lift $C_l$ and drag $C_d$ coefficients from $\alpha = -10^{\circ}$ to $\alpha = 15^{\circ}$ to `plots/station_{idx}_polar_{Re}.csv`.
    * **Plot curves**: Generates a 2-panel chart comparing the raw experimental data points directly against the Cubic Spline curves used in the 3D solver:
      
      ![Station 2 Polar Curve Fits](analysis_results/plots/station_2_polar_100000.png)
