@@ -1,3 +1,9 @@
+---
+noteId: "bc53e9b076ff11f1a331e7e1aa1c46da"
+tags: []
+
+---
+
 # 3DAERODYNAMICS VLM Solver Suite
 
 **3DAERODYNAMICS** is an advanced 3D aerodynamic solver suite designed to calculate the lift, induced drag, and circulation distributions of custom lifting surfaces (wings) using panel methods. The package features two principal solvers:
@@ -194,7 +200,9 @@ An interactive diagnostic tool is included to perform individual wing station (s
 1. Launch the interactive CLI: `python3 run_solver.py` and select option `7` (**Perform Section Polar Analysis**).
 2. Select any wing station index, `c` to specify a Custom section, or `e` to Exit.
 3. If custom is selected, enter the airfoil name, chord, and freestream velocity. The system computes the local operational Reynolds number:
-   \[\mathrm{Re} = \frac{V_{\infty} c}{\nu}\]
+
+   $$\mathrm{Re} = \frac{V_{\infty} c}{\nu}$$
+
    and automatically matches and downloads the closest standard experimental polar dataset from AirfoilTools.
 4. Export options:
    * **CSV Export**: Writes a database of fitted lift $C_l$ and drag $C_d$ coefficients from $\alpha = -10^{\circ}$ to $\alpha = 15^{\circ}$ to `plots/station_{idx}_polar_{Re}.csv`.
